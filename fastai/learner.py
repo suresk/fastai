@@ -94,8 +94,16 @@ class Learner():
 
     @property
     def metrics(self): return self._metrics
+    @property
+    def metric_titles(self): return self._metric_titles
     @metrics.setter
-    def metrics(self,v): self._metrics = L(v).map(mk_metric)
+    def metrics(self,v):
+        if isinstance(v, dict):
+            self._metrics = L(v.values()).map(mk_metric)
+            self._metric_titles = L(v.keys())
+        else:
+            self._metrics = L(v).map(mk_metric)
+            self._metric_titles = self.metrics.attrgot('name')
 
     def _grab_cbs(self, cb_cls): return L(cb for cb in self.cbs if isinstance(cb, cb_cls))
     def add_cbs(self, cbs): L(cbs).map(self.add_cb)
@@ -440,7 +448,8 @@ class Recorder(Callback):
     def before_fit(self):
         "Prepare state for training"
         self.lrs,self.iters,self.losses,self.values = [],[],[],[]
-        names = self.metrics.attrgot('name')
+
+        names = self.metric_titles
         if self.train_metrics and self.valid_metrics:
             names = L('loss') + names
             names = names.map('train_{}') + names.map('valid_{}')
